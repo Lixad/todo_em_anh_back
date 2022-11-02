@@ -25,6 +25,26 @@ app.post('/', (req, res) => {
   res.status(200).send('Task added');
 });
 
+app.put('/:id', (req, res) => {
+  const data = JSON.parse(fs.readFileSync('data.json', 'utf-8'));
+  const id = parseInt(req.params.id);
+  if (!data.tasks.find(e => e.id === id)) return res.status(404).send('Task not found');
+  const selectedTask = data.tasks.find(e => e.id === id)
+  selectedTask.checked = !selectedTask.checked;
+  fs.writeFileSync('data.json', JSON.stringify(data));
+  res.status(200).send('Task updated');
+})
+
+app.delete('/:id', (req, res) => {
+  const data = JSON.parse(fs.readFileSync('data.json', 'utf-8'));
+  const id = parseInt(req.params.id);
+  if (!data.tasks.find(e => e.id === id)) return res.status(404).send('Task not found');
+  const selectedTask = data.tasks.find(e => e.id === id)
+  data.tasks.splice(data.tasks.indexOf(selectedTask), 1);
+  fs.writeFileSync('data.json', JSON.stringify(data));
+  res.status(200).send('Task updated');
+})
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
 });
