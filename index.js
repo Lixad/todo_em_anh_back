@@ -1,48 +1,44 @@
+require('./mongooseConnection.js');
+const { ObjectId } = require('mongoose');
 const express = require('express');
 const app = express();
+const Item = require('./dbModel.js');
 const cors = require('cors');
 const port = process.env.PORT || 5000;
-const fs = require('fs');
 
 app.use(express.json());
 app.use(cors());
 
-app.get('/', (_req, res) => {
-  const data = JSON.parse(fs.readFileSync('data.json', 'utf-8'));
-  res.send(data.tasks);
+app.get('/', async (_req, res) => {
+  const tasks = await Item.find({}, { value: 1, checked: 1 })
+  res.send({ tasks });
 });
 
 app.post('/', (req, res) => {
-  const data = JSON.parse(fs.readFileSync('data.json', 'utf-8'));
-  if (data.tasks.find(e => e.name === req.body.task)) return res.status(400).send('Task already exist');
-  data.tasks.push({
-    name: req.body.task,
-    checked: false,
-    id: data.tasks.length ? data.tasks[data.tasks.length - 1].id + 1 : 0
+  const item = new Item({
+    value: req.body.task
   });
-  console.log(data);
-  fs.writeFileSync('data.json', JSON.stringify(data));
+  item.save((err, comment) => {
+    if (err) console.log(err);
+    else console.log('fallowing comment was saved:', comment);
+  });
   res.status(200).send('Task added');
 });
 
 app.put('/:id', (req, res) => {
-  const data = JSON.parse(fs.readFileSync('data.json', 'utf-8'));
-  const id = parseInt(req.params.id);
-  if (!data.tasks.find(e => e.id === id)) return res.status(404).send('Task not found');
-  const selectedTask = data.tasks.find(e => e.id === id)
-  selectedTask.checked = !selectedTask.checked;
-  fs.writeFileSync('data.json', JSON.stringify(data));
-  res.status(200).send('Task updated');
+  Item.findByIdAndUpdate(req.params.id, { checked: res.body.checked }, function(err, result){
+    if(err){
+      res.send(err)
+    }
+    else{
+      res.send(result)
+    }
+  })
 })
 
-app.delete('/:id', (req, res) => {
-  const data = JSON.parse(fs.readFileSync('data.json', 'utf-8'));
-  const id = parseInt(req.params.id);
-  if (!data.tasks.find(e => e.id === id)) return res.status(404).send('Task not found');
-  const selectedTask = data.tasks.find(e => e.id === id)
-  data.tasks.splice(data.tasks.indexOf(selectedTask), 1);
-  fs.writeFileSync('data.json', JSON.stringify(data));
-  res.status(200).send('Task updated');
+app.delete('/:id', async (req, res) => {
+  await Item.deleteOne({_id: req.params.id});
+  return res.status(200).send('Task deleted');
 })
 
 app.listen(port, () => {
