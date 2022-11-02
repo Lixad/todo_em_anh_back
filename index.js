@@ -26,7 +26,7 @@ app.post('/', (req, res) => {
 });
 
 app.put('/:id', (req, res) => {
-  Item.findByIdAndUpdate(req.params.id, { checked: res.body.checked }, function(err, result){
+  Item.findByIdAndUpdate(req.params.id, { checked: req.body.checked }, function(err, result){
     if(err){
       res.send(err)
     }
